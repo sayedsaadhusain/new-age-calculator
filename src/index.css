@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2b4bee;
+  --color-primary-hover: #1a3ad9;
+  --color-background-dark: #101322;
+  --color-background-light: #f6f6f8;
+  --color-card-dark: #1c1d27;
+  --color-card-light: #ffffff;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0a0a0;
+
+  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background-dark text-text-primary antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(28, 29, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(28, 29, 39, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-morphic {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #101322;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b4bee;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1a3ad9;
+}
