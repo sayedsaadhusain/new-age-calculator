@@ -217,3 +217,99 @@ export const getMilestones = (dob: Date): Milestone[] => {
 
     return milestones.sort((a, b) => a.date.getTime() - b.date.getTime());
 };
+
+export interface AgeDifference {
+    years: number;
+    months: number;
+    days: number;
+    totalDays: number;
+    olderPerson: 'A' | 'B' | 'Equal';
+    ratio: number;
+    heartbeatsDiff: number; // Approximate difference in heartbeats (using avg 80 bpm)
+}
+
+export const calculateAgeDifference = (dateA: Date, dateB: Date): AgeDifference => {
+    // Determine older/younger for calculation
+    const isAOlder = dateA < dateB;
+    const older = isAOlder ? dateA : dateB;
+    const younger = isAOlder ? dateB : dateA;
+
+    const duration = intervalToDuration({ start: older, end: younger });
+    const totalDays = differenceInDays(younger, older);
+
+    // Safety check for calculation (avoid division by zero if same birthday)
+    const ageA = new Date().getTime() - dateA.getTime();
+    const ageB = new Date().getTime() - dateB.getTime();
+
+    // Avg heartbeats: 80 bpm * 60 min * 24 hours = 115,200 beats/day
+    const heartbeatsDiff = totalDays * 115200;
+
+    return {
+        years: duration.years || 0,
+        months: duration.months || 0,
+        days: duration.days || 0,
+        totalDays,
+        olderPerson: dateA.getTime() === dateB.getTime() ? 'Equal' : (isAOlder ? 'A' : 'B'),
+        ratio: isAOlder ? (ageA / ageB) : (ageB / ageA), // Always > 1
+        heartbeatsDiff
+    };
+};
+
+export interface RatioMilestone {
+    targetRatio: number;
+    date: Date;
+    daysRemaining: number;
+    currentRatio: number;
+    progress: number; // 0-100 indicating progress from previous integer ratio towards target
+}
+
+export const calculateNextRatioMilestone = (dateA: Date, dateB: Date): RatioMilestone | null => {
+    // Ensure we work with logic: Ratio = Older / Younger
+    const olderDob = dateA < dateB ? dateA : dateB;
+    const youngerDob = dateA < dateB ? dateB : dateA;
+
+    const ageOlder = new Date().getTime() - olderDob.getTime();
+    const ageYounger = new Date().getTime() - youngerDob.getTime();
+
+    if (ageYounger <= 0) return null;
+
+    const currentRatio = ageOlder / ageYounger;
+
+    // Target next "nice" ratio (e.g. 1.25, 1.5, 1.75, 2.0, etc.)
+    // We want increments of 0.05 or similar for "milestones"
+    const step = 0.05;
+    let targetRatio = Math.floor(currentRatio * 100) / 100; // truncate
+    while (targetRatio >= currentRatio || (targetRatio % step > 0.001)) { // Find previous nice step
+        targetRatio -= step;
+    }
+
+    // Let's target next 0.01 decrement or 0.05 decrement
+
+    // If we want closer steps, maybe 0.01?
+    const target = Math.floor(currentRatio * 100) / 100; // 1.14
+
+    let targetR = target;
+    if (targetR >= currentRatio) targetR -= 0.01;
+
+    // Calc Date
+    const Dy = youngerDob.getTime();
+    const Do = olderDob.getTime();
+
+    // t = (R*Dy - Do) / (R - 1)
+    const t = (targetR * Dy - Do) / (targetR - 1);
+    const targetDate = new Date(t);
+
+    const now = new Date();
+    const daysRemaining = differenceInDays(targetDate, now);
+
+    // Progress calculation (arbitrary scale, maybe from previous 0.01 step?)
+    const progress = (currentRatio - targetR) / 0.01 * 100;
+
+    return {
+        targetRatio: targetR,
+        date: targetDate,
+        daysRemaining: Math.max(0, daysRemaining),
+        currentRatio,
+        progress: Math.min(100, Math.max(0, progress))
+    };
+};

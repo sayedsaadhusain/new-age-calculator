@@ -1,49 +1,111 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const API_URL = 'http://localhost:5000/api';
+
+interface Friend {
+    id: string | number;
+    name: string;
+    dob: Date;
+}
+
 interface AgeState {
     birthDate: Date | null;
     name: string;
     setBirthDate: (date: Date) => void;
     setName: (name: string) => void;
-    friends: Array<{ id: string; name: string; dob: Date }>;
-    addFriend: (name: string, dob: Date) => void;
-    removeFriend: (id: string) => void;
+
+    friends: Friend[];
+    isLoading: boolean;
+    error: string | null;
+    comparisonPersonId: string | number | null; // ID of the friend selected for comparison
+
+    fetchFriends: () => Promise<void>;
+    addFriend: (name: string, dob: Date) => Promise<void>;
+    removeFriend: (id: string | number) => Promise<void>;
+    setComparisonPersonId: (id: string | number | null) => void;
 }
 
 export const useAgeStore = create<AgeState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             birthDate: null,
             name: '',
             setBirthDate: (date) => set({ birthDate: date }),
             setName: (name) => set({ name }),
+
             friends: [],
-            addFriend: (name, dob) => set((state) => ({
-                friends: [...state.friends, { id: crypto.randomUUID(), name, dob }]
-            })),
-            removeFriend: (id) => set((state) => ({
-                friends: state.friends.filter((f) => f.id !== id)
-            })),
+            isLoading: false,
+            error: null,
+            comparisonPersonId: null,
+
+            setComparisonPersonId: (id) => set({ comparisonPersonId: id }),
+
+            fetchFriends: async () => {
+                set({ isLoading: true, error: null });
+                try {
+                    const response = await fetch(`${API_URL}/friends`);
+                    if (!response.ok) throw new Error('Failed to fetch friends');
+                    const data = await response.json();
+                    set({
+                        friends: data.map((f: any) => ({ ...f, dob: new Date(f.dob) })),
+                        isLoading: false
+                    });
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+
+            addFriend: async (name, dob) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const response = await fetch(`${API_URL}/friends`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name,
+                            dob: dob.toISOString().split('T')[0] // Send as YYYY-MM-DD
+                        }),
+                    });
+                    if (!response.ok) throw new Error('Failed to add friend');
+                    const newFriend = await response.json();
+
+                    set((state) => ({
+                        friends: [...state.friends, { ...newFriend, dob: new Date(newFriend.dob) }],
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+
+            removeFriend: async (id) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const response = await fetch(`${API_URL}/friends/${id}`, {
+                        method: 'DELETE',
+                    });
+                    if (!response.ok) throw new Error('Failed to delete friend');
+
+                    set((state) => ({
+                        friends: state.friends.filter((f) => f.id !== id),
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
         }),
         {
             name: 'age-calculator-storage',
             partialize: (state) => ({
-                ...state,
-                birthDate: state.birthDate ? state.birthDate.toISOString() : null, // Store as string if object, but persist usually handles simple JSON.
-                // Wait, Date objects need to be deserialized.
-                // Zustand persist stores JSON string. So parsing back is needed.
-                // Or store as timestamps/strings.
-                // Best to store as strings and parse on read or make state store strings.
-                // Since `birthDate` is critical, let's keep it as string in storage, but Date in state?
-                // Let's store as string in Zustand state simplifies everything.
+                // Only persist local preferences, NOT the database data to avoid sync issues
+                birthDate: state.birthDate,
+                name: state.name
             }),
             onRehydrateStorage: () => (state) => {
                 if (state && state.birthDate && typeof state.birthDate === 'string') {
                     state.birthDate = new Date(state.birthDate);
-                }
-                if (state && state.friends) {
-                    state.friends = state.friends.map(f => ({ ...f, dob: typeof f.dob === 'string' ? new Date(f.dob) : f.dob }));
                 }
             }
         }

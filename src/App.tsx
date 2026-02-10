@@ -5,6 +5,7 @@ import { Home } from './pages/Home';
 import { Results } from './pages/Results';
 import { Milestones } from './pages/Milestones';
 import { Friends } from './pages/Friends';
+import { AgeComparison } from './pages/AgeComparison';
 import { Navbar } from './components/ui/Navbar';
 import { LoadingScreen } from './components/ui/LoadingScreen';
 import { useAgeStore } from './stores/useAgeStore';
@@ -33,6 +34,10 @@ function App() {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2000);
+
+    // Initial fetch of friends
+    useAgeStore.getState().fetchFriends();
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -47,6 +52,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/results" element={birthDate ? <Results /> : <Navigate to="/" />} />
           <Route path="/milestones" element={birthDate ? <Milestones /> : <Navigate to="/" />} />
+          <Route path="/compare" element={birthDate ? <AgeComparison /> : <Navigate to="/" />} />
           <Route path="/friends" element={<Friends />} />
         </Routes>
         <Navbar />

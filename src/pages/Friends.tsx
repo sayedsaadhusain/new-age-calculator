@@ -5,16 +5,16 @@ import { Plus, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Friends: FC = () => {
-    const { friends, addFriend, removeFriend } = useAgeStore();
+    const { friends, addFriend, removeFriend, isLoading, error } = useAgeStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [newFriendName, setNewFriendName] = useState('');
     const [newFriendDate, setNewFriendDate] = useState('');
 
-    const handleAddFriend = (e: React.FormEvent) => {
+    const handleAddFriend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newFriendName && newFriendDate) {
-            addFriend(newFriendName, new Date(newFriendDate));
+            await addFriend(newFriendName, new Date(newFriendDate));
             setNewFriendName('');
             setNewFriendDate('');
             setIsAdding(false);
@@ -57,7 +57,17 @@ export const Friends: FC = () => {
 
             {/* Friends List */}
             <div className="flex flex-col gap-4 p-4">
-                {filteredFriends.length === 0 ? (
+                {isLoading && (
+                    <div className="text-center py-10 text-slate-400 animate-pulse">
+                        Loading friends...
+                    </div>
+                )}
+                {error && (
+                    <div className="bg-red-500/10 text-red-500 p-4 rounded-xl text-center text-sm border border-red-500/20">
+                        {error}
+                    </div>
+                )}
+                {!isLoading && !error && filteredFriends.length === 0 ? (
                     <div className="text-center py-20 text-slate-400">
                         {searchTerm ? 'No matches found.' : 'No friends added yet.'}
                     </div>

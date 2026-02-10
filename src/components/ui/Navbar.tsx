@@ -1,6 +1,6 @@
 import { type FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, RotateCcw, Globe, Users } from 'lucide-react';
+import { Calendar, RotateCcw, Globe, Users, ArrowRightLeft } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { motion } from 'framer-motion';
 
@@ -11,6 +11,7 @@ export const Navbar: FC = () => {
     const items = [
         { id: 'results', icon: Calendar, label: 'Results', path: '/results' },
         { id: 'milestones', icon: Globe, label: 'Milestones', path: '/milestones' },
+        { id: 'compare', icon: ArrowRightLeft, label: 'Compare', path: '/compare' },
         { id: 'friends', icon: Users, label: 'Friends', path: '/friends' },
         { id: 'home', icon: RotateCcw, label: 'New', path: '/' },
     ];
