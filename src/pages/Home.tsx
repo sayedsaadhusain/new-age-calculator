@@ -1,128 +1,190 @@
 import { useState, type FC } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CircularSelector } from '../components/entry/CircularSelector';
-import { Card } from '../components/ui/Card';
 import { useAgeStore } from '../stores/useAgeStore';
-import { Calendar, RefreshCw } from 'lucide-react';
+import {
+    ArrowRight,
+    Menu,
+    History,
+    PartyPopper, // Celebration
+    CalendarDays
+} from 'lucide-react';
 import { cn } from '../utils/cn';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DatePicker } from '../components/ui/DatePicker';
 
 export const Home: FC = () => {
     const navigate = useNavigate();
-    const { setBirthDate } = useAgeStore();
-    const [step, setStep] = useState<'year' | 'month' | 'day'>('year');
+    const { birthDate, setBirthDate } = useAgeStore();
 
-    const currentYear = new Date().getFullYear();
-    const [year, setYear] = useState(2000);
-    const [month, setMonth] = useState(1);
-    const [day, setDay] = useState(1);
+    // State for date input
+    const [dateString, setDateString] = useState(birthDate ? birthDate.toLocaleDateString('en-GB') : '');
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleNext = () => {
-        if (step === 'year') setStep('month');
-        else if (step === 'month') setStep('day');
-        else {
-            // Calculate and save
-            const dob = new Date(year, month - 1, day);
-            setBirthDate(dob);
-            navigate('/results');
+    const handleCalculate = () => {
+        if (dateString.length !== 10) {
+            setError('Please enter a full date (DD/MM/YYYY)');
+            return;
         }
+
+        const [day, month, year] = dateString.split('/').map(Number);
+        const dob = new Date(year, month - 1, day);
+
+        // Basic validation
+        if (
+            dob.getDate() !== day ||
+            dob.getMonth() !== month - 1 ||
+            dob.getFullYear() !== year ||
+            year < 1900 ||
+            year > new Date().getFullYear()
+        ) {
+            setError('Invalid Date');
+            return;
+        }
+
+        setBirthDate(dob);
+        navigate('/results');
     };
 
-    const getStepLabel = () => {
-        if (step === 'year') return 'Select Birth Year';
-        if (step === 'month') return 'Select Birth Month';
-        return 'Select Birth Day';
-    };
-
-    const getDialProps = () => {
-        if (step === 'year') return { min: 1900, max: currentYear, value: year, onChange: setYear };
-        if (step === 'month') return { min: 1, max: 12, value: month, onChange: setMonth };
-
-        // Calculate max days in month
-        const maxDays = new Date(year, month, 0).getDate();
-        return { min: 1, max: maxDays, value: day, onChange: setDay };
-    };
-
-    const dialProps = getDialProps();
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
-            {/* Background Mesh Gradients */}
-            <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px]" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[100px]" />
+        <div className="min-h-screen bg-background-dark text-white flex flex-col items-center relative overflow-hidden font-display">
+            {/* Background Pattern Decoration (Mesh Gradient) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-[10%] -left-[10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
+                <div className="absolute top-[40%] -right-[10%] w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px]" />
+            </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-md z-10 space-y-8"
-            >
-                <div className="text-center space-y-2">
-                    <motion.h1
-                        key={step}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className="text-3xl font-bold text-white tracking-tight"
-                    >
-                        {getStepLabel()}
-                    </motion.h1>
-                    <div className="flex justify-center gap-2">
-                        {['year', 'month', 'day'].map((s, i) => (
-                            <div
-                                key={s}
-                                className={cn(
-                                    "w-2 h-2 rounded-full transition-all duration-300",
-                                    s === step ? "bg-blue-500 w-6" : (['year', 'month', 'day'].indexOf(step) > i ? "bg-blue-500/50" : "bg-white/20")
-                                )}
-                            />
-                        ))}
-                    </div>
-                </div>
+            {/* Top Navigation Bar */}
+            <div className="w-full flex items-center justify-between p-4 z-20 border-b border-white/5 bg-background-dark/50 backdrop-blur-md sticky top-0">
+                <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/5 transition-colors">
+                    <Menu className="text-white" />
+                </button>
+                <h2 className="text-lg font-bold">Age Calculator</h2>
+                <div className="w-10" /> {/* Spacer for centering */}
+            </div>
 
-                <div className="relative h-80 flex items-center justify-center mb-16">
-                    <CircularSelector
-                        {...dialProps}
-                        label={step.toUpperCase()}
-                    />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <Card variant="glass" className="p-4 flex flex-col items-center justify-center gap-2">
-                        <Calendar className="w-6 h-6 text-blue-400" />
-                        <span className="text-xs text-gray-400 uppercase tracking-wider">Date of Birth</span>
-                        <span className="font-semibold">{day}/{month}/{year}</span>
-                    </Card>
-                    <Card variant="glass" className="p-4 flex flex-col items-center justify-center gap-2">
-                        <RefreshCw className="w-6 h-6 text-green-400" />
-                        <span className="text-xs text-gray-400 uppercase tracking-wider">Today</span>
-                        <span className="font-semibold">{new Date().toLocaleDateString()}</span>
-                    </Card>
-                </div>
-
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleNext}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(43,75,238,0.4)] hover:shadow-[0_0_30px_rgba(43,75,238,0.6)] transition-shadow"
+            {/* Hero Content */}
+            <main className="flex-1 w-full max-w-md flex flex-col items-center px-6 pt-12 z-10 pb-24">
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-20 h-20 bg-primary/20 rounded-2xl flex items-center justify-center mb-8"
                 >
-                    {step === 'day' ? 'Calculate Age' : 'Next'}
-                </motion.button>
+                    <CalendarDays className="text-primary w-10 h-10" />
+                </motion.div>
 
-                {/* Tab Strip */}
-                <div className="flex justify-center gap-8 text-sm font-medium text-gray-500">
-                    {['Year', 'Month', 'Day'].map((label) => (
+                <motion.h1
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-2"
+                >
+                    When were you born?
+                </motion.h1>
+
+                <motion.p
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-gray-400 text-base text-center mb-10"
+                >
+                    Today is <span className="font-medium text-white">{today}</span>
+                </motion.p>
+
+                {/* Input Section */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full space-y-6"
+                >
+                    <div className="flex flex-col gap-2 relative">
+                        <label className="text-sm font-semibold text-gray-300 ml-1">Date of Birth</label>
+                        <div className="relative group">
+                            <button
+                                onClick={() => setShowCalendar(!showCalendar)}
+                                className={cn(
+                                    "w-full h-16 bg-white/5 border rounded-xl px-4 text-xl font-medium flex items-center justify-between transition-all outline-none text-left",
+                                    error ? "border-red-500 focus:ring-red-500" : "border-white/10 hover:border-primary/50",
+                                    showCalendar && "border-primary ring-2 ring-primary/20"
+                                )}
+                            >
+                                <span className={cn(!dateString && "text-gray-600")}>
+                                    {dateString || "DD / MM / YYYY"}
+                                </span>
+                                <CalendarDays size={24} className="text-gray-400" />
+                            </button>
+
+                            <AnimatePresence>
+                                {showCalendar && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute top-full left-0 right-0 mt-2 z-50"
+                                    >
+                                        <div className="bg-background-dark/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-1">
+                                            <DatePicker
+                                                selected={birthDate || new Date()}
+                                                onSelect={(date) => {
+                                                    setBirthDate(date);
+                                                    setDateString(date.toLocaleDateString('en-GB')); // DD/MM/YYYY
+                                                    setShowCalendar(false);
+                                                    setError('');
+                                                }}
+                                            />
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                        {error && <span className="text-red-400 text-xs ml-1">{error}</span>}
+                    </div>
+
+                    {/* Action Button */}
+                    <button
+                        onClick={handleCalculate}
+                        className="w-full h-14 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+                    >
+                        <span>Calculate Age</span>
+                        <ArrowRight size={20} />
+                    </button>
+                </motion.div>
+
+                {/* Secondary Info/Features */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="mt-16 w-full"
+                >
+                    <div className="grid grid-cols-2 gap-4">
                         <button
-                            key={label}
-                            onClick={() => setStep(label.toLowerCase() as any)}
-                            className={cn(
-                                "transition-colors hover:text-white",
-                                step === label.toLowerCase() ? "text-blue-400" : ""
-                            )}
+                            onClick={() => navigate('/friends')}
+                            className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 flex flex-col items-center text-center transition-colors group"
                         >
-                            {label}
+                            <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <History className="text-blue-400 w-5 h-5" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Saved</span>
+                            <span className="text-sm font-bold mt-1">History</span>
                         </button>
-                    ))}
-                </div>
-            </motion.div>
+
+                        <button
+                            onClick={() => navigate('/milestones')}
+                            className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 flex flex-col items-center text-center transition-colors group"
+                        >
+                            <div className="w-10 h-10 rounded-full bg-amber-900/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <PartyPopper className="text-amber-500 w-5 h-5" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Next</span>
+                            <span className="text-sm font-bold mt-1">Milestones</span>
+                        </button>
+                    </div>
+                </motion.div>
+            </main>
         </div>
     );
 };
