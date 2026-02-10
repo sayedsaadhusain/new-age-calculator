@@ -4,11 +4,10 @@ import { useAgeStore } from '../stores/useAgeStore';
 import { calculateAgeDetails, type AgeDetails } from '../utils/dateUtils';
 import { Card } from '../components/ui/Card';
 import { Calendar, Clock, RotateCcw, User, Smile } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 
 export const Results: FC = () => {
     const { birthDate } = useAgeStore();
-    const navigate = useNavigate();
     const [details, setDetails] = useState<AgeDetails | null>(null);
 
     useEffect(() => {
@@ -123,21 +122,7 @@ export const Results: FC = () => {
                 </div>
             </div>
 
-            {/* Bottom Navigation Placeholder - Simple version for MVP */}
-            <div className="fixed bottom-0 left-0 right-0 h-16 glass bg-black/50 backdrop-blur-md border-t border-white/10 flex justify-around items-center z-50">
-                <button onClick={() => navigate('/')} className="flex flex-col items-center gap-1 text-gray-400 hover:text-blue-400">
-                    <RotateCcw size={20} />
-                    <span className="text-[10px]">Recalculate</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 text-blue-400">
-                    <Calendar size={20} />
-                    <span className="text-[10px]">Results</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-blue-400">
-                    <User size={20} />
-                    <span className="text-[10px]">Profile</span>
-                </button>
-            </div>
+
 
         </div>
     );

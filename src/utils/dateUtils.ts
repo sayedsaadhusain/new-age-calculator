@@ -100,6 +100,7 @@ export const calculateAgeDetails = (dob: Date): AgeDetails | null => {
         ageTurning: years + 1
     };
 
+
     return {
         years: duration.years || 0,
         months: duration.months || 0,
@@ -113,4 +114,106 @@ export const calculateAgeDetails = (dob: Date): AgeDetails | null => {
         zodiac: getZodiacSign(dob),
         leapYearsLived: calculateLeapYearsLived(dob)
     };
+};
+
+export interface PlanetaryAge {
+    planet: string;
+    years: number;
+    nextBirthdayIn: number; // days
+    iconColor: string;
+}
+
+export const calculatePlanetaryAges = (dob: Date): PlanetaryAge[] => {
+    const daysAlive = differenceInDays(new Date(), dob);
+    const planets = [
+        { name: 'Mercury', period: 87.97, color: 'text-yellow-400' },
+        { name: 'Venus', period: 224.70, color: 'text-orange-400' },
+        { name: 'Mars', period: 686.98, color: 'text-red-500' },
+        { name: 'Jupiter', period: 4332.59, color: 'text-orange-300' },
+        { name: 'Saturn', period: 10759.22, color: 'text-yellow-600' },
+        { name: 'Uranus', period: 30685.4, color: 'text-cyan-400' },
+        { name: 'Neptune', period: 60189.0, color: 'text-blue-500' }
+    ];
+
+    return planets.map(planet => {
+        const age = daysAlive / planet.period;
+        const years = Math.floor(age);
+        const nextBirthdayIn = Math.ceil((years + 1) * planet.period - daysAlive);
+        return {
+            planet: planet.name,
+            years,
+            nextBirthdayIn,
+            iconColor: planet.color
+        };
+    });
+};
+
+export interface Milestone {
+    title: string;
+    value: number | string;
+    date: Date;
+    isCompleted: boolean;
+    type: 'days' | 'minutes' | 'birthday';
+}
+
+export const getMilestones = (dob: Date): Milestone[] => {
+    const now = new Date();
+    const milestones: Milestone[] = [];
+
+    // 10k Days
+    const day10k = new Date(dob);
+    day10k.setDate(dob.getDate() + 10000);
+    milestones.push({
+        title: "10,000th Day",
+        value: "10,000 Days",
+        date: day10k,
+        isCompleted: now > day10k,
+        type: 'days'
+    });
+
+    // 20k Days
+    const day20k = new Date(dob);
+    day20k.setDate(dob.getDate() + 20000);
+    milestones.push({
+        title: "20,000th Day",
+        value: "20,000 Days",
+        date: day20k,
+        isCompleted: now > day20k,
+        type: 'days'
+    });
+
+    // 1 Million Minutes
+    const min1m = new Date(dob.getTime() + 1000000 * 60000);
+    milestones.push({
+        title: "1 Million Minutes",
+        value: "1,000,000 Mins",
+        date: min1m,
+        isCompleted: now > min1m,
+        type: 'minutes'
+    });
+
+    // 1 Billion Seconds
+    const sec1b = new Date(dob.getTime() + 1000000000 * 1000);
+    milestones.push({
+        title: "1 Billion Seconds",
+        value: "1,000,000,000 Secs",
+        date: sec1b,
+        isCompleted: now > sec1b,
+        type: 'minutes'
+    });
+
+    // Decades
+    [18, 21, 30, 40, 50, 60, 70, 80, 90, 100].forEach(age => {
+        const date = new Date(dob);
+        date.setFullYear(dob.getFullYear() + age);
+        milestones.push({
+            title: `${age}th Birthday`,
+            value: `${age} Years`,
+            date: date,
+            isCompleted: now > date,
+            type: 'birthday'
+        });
+    });
+
+    return milestones.sort((a, b) => a.date.getTime() - b.date.getTime());
 };

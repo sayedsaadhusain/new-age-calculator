@@ -78,7 +78,7 @@ export const Home: FC = () => {
                     </div>
                 </div>
 
-                <div className="relative h-80 flex items-center justify-center">
+                <div className="relative h-80 flex items-center justify-center mb-16">
                     <CircularSelector
                         {...dialProps}
                         label={step.toUpperCase()}
